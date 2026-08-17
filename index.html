@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,13 +52,41 @@
 
   /* ---- orbit decoration ---- */
   .orbit-decor{
-    position:absolute; top:-40px; left:50%; transform:translateX(-50%);
-    width:640px; height:420px; pointer-events:none; z-index:0; opacity:0.55;
+    position:absolute; top:-60px; left:50%; transform:translateX(-50%);
+    width:900px; height:620px; max-width:140vw; pointer-events:none; z-index:0; opacity:0.9;
   }
-  .orbit-decor svg{ width:100%; height:100%; overflow:visible; }
-  .orbit-ring{ fill:none; stroke:rgba(242,240,233,0.14); stroke-width:1; }
-  .orbit-dot{ fill:var(--text); opacity:0.85; }
-  .orbit-sym{ fill:rgba(242,240,233,0.28); font-family:var(--font-body); font-size:13px; }
+  .orbit-decor.small{ width:640px; height:420px; top:-40px; opacity:0.75; }
+  .orbit-decor.small .orbit-glow{ width:380px; height:380px; top:36%; }
+  .orbit-glow{
+    position:absolute; top:38%; left:50%; width:520px; height:520px; border-radius:50%;
+    transform:translate(-50%,-50%);
+    background:radial-gradient(circle, rgba(242,240,233,0.16) 0%, rgba(242,240,233,0.05) 38%, rgba(0,0,0,0) 70%);
+    animation:glowDrift 13s ease-in-out infinite alternate;
+    filter:blur(2px);
+  }
+  @keyframes glowDrift{
+    0%{ transform:translate(-56%,-46%) scale(0.92); }
+    50%{ transform:translate(-46%,-54%) scale(1.06); }
+    100%{ transform:translate(-52%,-42%) scale(0.98); }
+  }
+  .orbit-decor svg{ width:100%; height:100%; overflow:visible; position:relative; z-index:1; }
+  .orbit-ring-wrap{ transform-box:fill-box; transform-origin:center; animation:ringTilt 11s ease-in-out infinite; }
+  @keyframes ringTilt{
+    0%{ transform:rotate(-7deg) scaleY(0.92); }
+    50%{ transform:rotate(6deg) scaleY(0.6); }
+    100%{ transform:rotate(-7deg) scaleY(0.92); }
+  }
+  .orbit-ring{ fill:none; stroke:rgba(242,240,233,0.16); stroke-width:1; }
+  .orbit-ring.ring-2{ stroke:rgba(242,240,233,0.09); }
+  .orbit-dot{ fill:var(--text); opacity:0.9; }
+  .orbit-sym{
+    fill:rgba(242,240,233,0.4); font-family:var(--font-body); font-size:13px;
+    opacity:0; animation:symTwinkle 5s ease-in-out infinite;
+  }
+  @keyframes symTwinkle{
+    0%, 100%{ opacity:0; transform:translateY(0); }
+    50%{ opacity:1; transform:translateY(-4px); }
+  }
 
   /* ---- pill ---- */
   .pill{
@@ -98,7 +127,7 @@
   .hero h1{
     font-size:clamp(2.6rem,6vw,4.6rem); line-height:1.08; margin:2.2rem 0 0; font-weight:400;
   }
-  .hero h1 .italic-line{ font-style:italic; display:block; margin-top:0.1rem; }
+  .hero h1 .italic-line{ font-style:italic; }
   .hero .sub{ color:var(--text-muted); font-size:1.08rem; max-width:560px; margin:2rem auto 2.4rem; }
   .hero-cta{ display:flex; gap:0.9rem; flex-wrap:wrap; justify-content:center; margin-bottom:1.6rem; }
   .btn{ font-family:var(--font-body); font-weight:600; font-size:0.9rem; padding:0.95rem 1.7rem; border-radius:999px; display:inline-flex; align-items:center; gap:0.4rem; transition:transform .15s ease, background .15s ease, border-color .15s ease, opacity .15s ease; }
@@ -228,6 +257,10 @@
   .char-count{ font-size:0.72rem; color:var(--text-faint); text-align:right; }
   .form-submit{ width:100%; justify-content:center; margin-top:0.5rem; }
   .form-note{ font-size:0.78rem; color:var(--text-faint); margin-top:1.1rem; text-align:center; }
+  .form-success{ text-align:center; padding:1.5rem 0.5rem; }
+  .form-success-title{ font-family:var(--font-display); font-size:1.4rem; margin-bottom:0.8rem; }
+  .form-success-sub{ color:var(--text-muted); font-size:0.92rem; margin-bottom:1.6rem; }
+  .form-submit[disabled]{ opacity:0.6; cursor:default; }
 
   /* ---------- FOOTER ---------- */
   footer{ padding:3.5rem 0 2.5rem; border-top:1px solid var(--border-soft); }
@@ -247,6 +280,20 @@
 
   .reveal{ opacity:0; transform:translateY(16px); transition:opacity .6s ease, transform .6s ease; }
   .reveal.in{ opacity:1; transform:translateY(0); }
+
+  /* ---- typewriter headings ---- */
+  .tw-line{
+    display:inline-block; overflow:hidden; white-space:nowrap; vertical-align:top;
+    width:0; max-width:100%;
+    border-right:2px solid rgba(242,240,233,0.7);
+    animation:twType 1.1s steps(var(--chars,10),end) forwards, twBlink 0.8s step-end infinite;
+    animation-delay:var(--delay,0s), var(--delay,0s);
+    animation-play-state:paused, paused;
+  }
+  .tw-heading.tw-active .tw-line{ animation-play-state:running, running; }
+  .tw-line.tw-done{ border-right-color:transparent; animation:none; width:calc(var(--chars,10) * 1ch); }
+  @keyframes twType{ from{ width:0; } to{ width:calc(var(--chars,10) * 1ch); } }
+  @keyframes twBlink{ 0%,100%{ border-color:rgba(242,240,233,0.7); } 50%{ border-color:transparent; } }
 
   @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } html{ scroll-behavior:auto; } }
 
@@ -303,24 +350,30 @@
   <!-- HERO -->
   <section class="hero" data-section data-label="Hero">
     <div class="orbit-decor" aria-hidden="true">
-      <svg viewBox="0 0 640 420">
-        <ellipse class="orbit-ring" cx="320" cy="210" rx="270" ry="150"></ellipse>
-        <circle class="orbit-dot" r="4">
-          <animateMotion dur="16s" repeatCount="indefinite" path="M 320,60 A 270,150 0 1 1 319.9,60 Z"></animateMotion>
-        </circle>
-        <text class="orbit-sym" x="120" y="90">01</text>
-        <text class="orbit-sym" x="500" y="120">{ }</text>
-        <text class="orbit-sym" x="90" y="270">λ</text>
-        <text class="orbit-sym" x="510" y="300">&lt;/&gt;</text>
-        <text class="orbit-sym" x="330" y="55">AI</text>
-        <text class="orbit-sym" x="230" y="345">0</text>
-        <text class="orbit-sym" x="400" y="70">+</text>
-        <text class="orbit-sym" x="150" y="330">PM</text>
+      <div class="orbit-glow"></div>
+      <svg viewBox="0 0 900 620">
+        <g class="orbit-ring-wrap">
+          <ellipse class="orbit-ring" cx="450" cy="300" rx="380" ry="210"></ellipse>
+          <ellipse class="orbit-ring ring-2" cx="450" cy="300" rx="300" ry="165"></ellipse>
+          <circle class="orbit-dot" r="4">
+            <animateMotion dur="18s" repeatCount="indefinite" path="M 450,90 A 380,210 0 1 1 449.9,90 Z"></animateMotion>
+          </circle>
+        </g>
+        <text class="orbit-sym" x="150" y="120" style="animation-delay:0s;animation-duration:6s">01</text>
+        <text class="orbit-sym" x="720" y="160" style="animation-delay:1.4s;animation-duration:5.2s">{ }</text>
+        <text class="orbit-sym" x="110" y="380" style="animation-delay:2.6s;animation-duration:7s">λ</text>
+        <text class="orbit-sym" x="740" y="430" style="animation-delay:0.8s;animation-duration:4.6s">&lt;/&gt;</text>
+        <text class="orbit-sym" x="470" y="65" style="animation-delay:3.2s;animation-duration:5.8s">AI</text>
+        <text class="orbit-sym" x="320" y="500" style="animation-delay:1.9s;animation-duration:6.4s">0</text>
+        <text class="orbit-sym" x="580" y="90" style="animation-delay:2.2s;animation-duration:5s">+</text>
+        <text class="orbit-sym" x="210" y="470" style="animation-delay:0.4s;animation-duration:6.8s">PM</text>
+        <text class="orbit-sym" x="790" y="290" style="animation-delay:3.6s;animation-duration:5.4s">1</text>
+        <text class="orbit-sym" x="80" y="230" style="animation-delay:1.1s;animation-duration:6.1s">X</text>
       </svg>
     </div>
     <div class="wrap hero-inner">
       <span class="pill"><span class="dot"></span>Open to senior PM roles</span>
-      <h1>Ship AI products<span class="italic-line">that earn real trust.</span></h1>
+      <h1 class="tw-heading" id="twHero"><span class="tw-line" style="--chars:17;--delay:0s">Ship AI products</span><br><span class="tw-line italic-line" style="--chars:21;--delay:1.3s">that earn real trust.</span></h1>
       <p class="sub">Transitioning into product management full-time — AI product strategy, multi-agent architecture, and safety frameworks, backed by 8+ years turning ambiguous growth and brand problems into shipped, measurable outcomes.</p>
       <div class="hero-cta">
         <a href="#contact" class="btn btn-primary">Get in touch</a>
@@ -348,19 +401,23 @@
 
   <!-- OVERVIEW -->
   <section id="overview" data-section data-label="Overview">
-    <div class="orbit-decor" aria-hidden="true">
+    <div class="orbit-decor small" aria-hidden="true">
+      <div class="orbit-glow"></div>
       <svg viewBox="0 0 640 420">
-        <ellipse class="orbit-ring" cx="320" cy="150" rx="260" ry="130"></ellipse>
-        <text class="orbit-sym" x="110" y="80">#</text>
-        <text class="orbit-sym" x="520" y="90">1</text>
-        <text class="orbit-sym" x="500" y="230">]</text>
-        <text class="orbit-sym" x="100" y="240">X</text>
+        <g class="orbit-ring-wrap">
+          <ellipse class="orbit-ring" cx="320" cy="150" rx="260" ry="130"></ellipse>
+          <ellipse class="orbit-ring ring-2" cx="320" cy="150" rx="205" ry="102"></ellipse>
+        </g>
+        <text class="orbit-sym" x="110" y="80" style="animation-delay:0.3s;animation-duration:5.4s">#</text>
+        <text class="orbit-sym" x="520" y="90" style="animation-delay:1.8s;animation-duration:6s">1</text>
+        <text class="orbit-sym" x="500" y="230" style="animation-delay:2.6s;animation-duration:5s">]</text>
+        <text class="orbit-sym" x="100" y="240" style="animation-delay:1s;animation-duration:6.6s">X</text>
       </svg>
     </div>
     <div class="wrap">
       <p class="eyebrow">Overview</p>
       <div class="section-head">
-        <h2>Four lenses.<br><em>One bar.</em></h2>
+        <h2 class="tw-heading"><span class="tw-line" style="--chars:12;--delay:0s">Four lenses.</span><br><span class="tw-line" style="--chars:8;--delay:0.9s;font-style:italic">One bar.</span></h2>
         <p>AI strategy, systems architecture, safety, and growth. Four angles on the same job: ship products people trust, starting from real constraints. No framework applied blindly — context, decisions, outcomes.</p>
       </div>
       <div class="overview-grid">
@@ -390,20 +447,24 @@
 
   <!-- METHOD -->
   <section id="method" data-section data-label="Method">
-    <div class="orbit-decor" aria-hidden="true">
+    <div class="orbit-decor small" aria-hidden="true">
+      <div class="orbit-glow"></div>
       <svg viewBox="0 0 640 420">
-        <ellipse class="orbit-ring" cx="320" cy="150" rx="240" ry="120"></ellipse>
-        <circle class="orbit-dot" r="3.5">
-          <animateMotion dur="18s" repeatCount="indefinite" path="M 320,30 A 240,120 0 1 1 319.9,30 Z"></animateMotion>
-        </circle>
-        <text class="orbit-sym" x="130" y="60">]</text>
-        <text class="orbit-sym" x="500" y="230">1</text>
+        <g class="orbit-ring-wrap">
+          <ellipse class="orbit-ring" cx="320" cy="150" rx="240" ry="120"></ellipse>
+          <ellipse class="orbit-ring ring-2" cx="320" cy="150" rx="188" ry="94"></ellipse>
+          <circle class="orbit-dot" r="3.5">
+            <animateMotion dur="18s" repeatCount="indefinite" path="M 320,30 A 240,120 0 1 1 319.9,30 Z"></animateMotion>
+          </circle>
+        </g>
+        <text class="orbit-sym" x="130" y="60" style="animation-delay:0.6s;animation-duration:5.6s">]</text>
+        <text class="orbit-sym" x="500" y="230" style="animation-delay:2.1s;animation-duration:6.2s">1</text>
       </svg>
     </div>
     <div class="wrap">
       <p class="eyebrow">Method</p>
       <div class="section-head">
-        <h2>Four steps.<br><em>One build.</em></h2>
+        <h2 class="tw-heading"><span class="tw-line" style="--chars:11;--delay:0s">Four steps.</span><br><span class="tw-line" style="--chars:10;--delay:0.85s;font-style:italic">One build.</span></h2>
         <p>Ninety minutes to decide, one page to act on. No jargon, no slide deck — a plan a small team can execute from tomorrow.</p>
       </div>
 
@@ -480,7 +541,7 @@
     <div class="wrap">
       <p class="eyebrow">Engagements</p>
       <div class="section-head">
-        <h2>Three formats.<br><em>Right level.</em></h2>
+        <h2 class="tw-heading"><span class="tw-line" style="--chars:14;--delay:0s">Three formats.</span><br><span class="tw-line" style="--chars:12;--delay:1.05s;font-style:italic">Right level.</span></h2>
         <p>Calibrated to the stakes — a session to unblock, a sprint to build, a fractional seat to keep it moving. Full-time roles remain the priority.</p>
       </div>
       <div class="services-grid">
@@ -530,17 +591,21 @@
 
   <!-- EXPERTISE -->
   <section id="expertise" data-section data-label="Expertise">
-    <div class="orbit-decor" aria-hidden="true">
+    <div class="orbit-decor small" aria-hidden="true">
+      <div class="orbit-glow"></div>
       <svg viewBox="0 0 640 420">
-        <ellipse class="orbit-ring" cx="320" cy="140" rx="250" ry="110"></ellipse>
-        <text class="orbit-sym" x="140" y="60">x</text>
-        <text class="orbit-sym" x="500" y="70">1</text>
+        <g class="orbit-ring-wrap">
+          <ellipse class="orbit-ring" cx="320" cy="140" rx="250" ry="110"></ellipse>
+          <ellipse class="orbit-ring ring-2" cx="320" cy="140" rx="196" ry="86"></ellipse>
+        </g>
+        <text class="orbit-sym" x="140" y="60" style="animation-delay:0.9s;animation-duration:5.8s">x</text>
+        <text class="orbit-sym" x="500" y="70" style="animation-delay:2.4s;animation-duration:5.2s">1</text>
       </svg>
     </div>
     <div class="wrap">
       <p class="eyebrow">Expertise</p>
       <div class="section-head">
-        <h2>Spec sheet.</h2>
+        <h2 class="tw-heading"><span class="tw-line" style="--chars:11;--delay:0s">Spec sheet.</span></h2>
         <p>8+ years steering, prioritizing, shipping. Here's the stack — methods, frameworks, tools. What I do fast and well.</p>
       </div>
       <div class="expertise-list">
@@ -609,20 +674,24 @@
 
   <!-- WORK -->
   <section id="work" data-section data-label="Work">
-    <div class="orbit-decor" aria-hidden="true">
+    <div class="orbit-decor small" aria-hidden="true">
+      <div class="orbit-glow"></div>
       <svg viewBox="0 0 640 420">
-        <ellipse class="orbit-ring" cx="320" cy="150" rx="270" ry="140"></ellipse>
-        <circle class="orbit-dot" r="3.5">
-          <animateMotion dur="20s" repeatCount="indefinite" path="M 320,10 A 270,140 0 1 1 319.9,10 Z"></animateMotion>
-        </circle>
-        <text class="orbit-sym" x="120" y="60">]</text>
-        <text class="orbit-sym" x="520" y="230">1</text>
+        <g class="orbit-ring-wrap">
+          <ellipse class="orbit-ring" cx="320" cy="150" rx="270" ry="140"></ellipse>
+          <ellipse class="orbit-ring ring-2" cx="320" cy="150" rx="212" ry="110"></ellipse>
+          <circle class="orbit-dot" r="3.5">
+            <animateMotion dur="20s" repeatCount="indefinite" path="M 320,10 A 270,140 0 1 1 319.9,10 Z"></animateMotion>
+          </circle>
+        </g>
+        <text class="orbit-sym" x="120" y="60" style="animation-delay:1.2s;animation-duration:6.4s">]</text>
+        <text class="orbit-sym" x="520" y="230" style="animation-delay:0.5s;animation-duration:5.6s">1</text>
       </svg>
     </div>
     <div class="wrap">
       <p class="eyebrow">Work</p>
       <div class="section-head">
-        <h2>Past <em>missions.</em></h2>
+        <h2 class="tw-heading"><span class="tw-line" style="--chars:14;--delay:0s">Past <em style="font-style:italic">missions.</em></span></h2>
         <p>From an autonomous AI ad platform to Fortune 500 martech and D2C launches — concrete deliverables, demanding terrain, teams left more capable than I found them.</p>
       </div>
 
@@ -761,7 +830,7 @@
     <div class="wrap">
       <p class="eyebrow">Education</p>
       <div class="section-head">
-        <h2>Foundation.</h2>
+        <h2 class="tw-heading"><span class="tw-line" style="--chars:11;--delay:0s">Foundation.</span></h2>
       </div>
       <div class="edu-list">
         <div class="edu-item reveal">
@@ -785,7 +854,7 @@
     <div class="wrap">
       <p class="eyebrow">FAQ</p>
       <div class="section-head">
-        <h2>Frequent questions.</h2>
+        <h2 class="tw-heading"><span class="tw-line" style="--chars:20;--delay:0s">Frequent questions.</span></h2>
       </div>
       <div class="faq-list">
         <details class="faq-item reveal">
@@ -825,7 +894,7 @@
     <div class="wrap">
       <p class="eyebrow">Contact</p>
       <div class="section-head">
-        <h2>Let's talk.</h2>
+        <h2 class="tw-heading"><span class="tw-line" style="--chars:11;--delay:0s">Let's talk.</span></h2>
         <p>Describe the context, the blocker, the goal — or just the role. I'll come back to you within 24 hours.</p>
       </div>
       <div class="contact-grid">
@@ -838,41 +907,49 @@
           </div>
         </div>
 
-        <form class="contact-form reveal" id="contactForm">
-          <div class="form-row">
-            <div class="field">
-              <label for="f-name">Name</label>
-              <input id="f-name" type="text" name="name" required>
+        <div class="contact-form reveal" id="contactFormWrap">
+          <form id="contactForm">
+            <div class="form-row">
+              <div class="field">
+                <label for="f-name">Name</label>
+                <input id="f-name" type="text" name="name" required>
+              </div>
+              <div class="field">
+                <label for="f-company">Company</label>
+                <input id="f-company" type="text" name="company">
+              </div>
             </div>
-            <div class="field">
-              <label for="f-company">Company</label>
-              <input id="f-company" type="text" name="company">
+            <div class="form-row">
+              <div class="field">
+                <label for="f-email">Email</label>
+                <input id="f-email" type="email" name="email" required>
+              </div>
+              <div class="field">
+                <label for="f-subject">Subject</label>
+                <select id="f-subject" name="subject">
+                  <option>Senior PM Role</option>
+                  <option>AI Product Diagnostic</option>
+                  <option>Embedded AI PM</option>
+                  <option>Fractional AI Product Lead</option>
+                  <option>Other</option>
+                </select>
+              </div>
             </div>
+            <div class="field" style="margin-bottom:0.5rem;">
+              <label for="f-message">Context</label>
+              <textarea id="f-message" name="message" maxlength="600" required></textarea>
+              <div class="char-count"><span id="charCount">0</span> / 600</div>
+            </div>
+            <button type="submit" class="btn btn-primary form-submit" id="formSubmitBtn">Send request ›</button>
+            <p class="form-note">Sends straight to my inbox — reply within 24 hours.</p>
+          </form>
+
+          <div id="formSuccess" class="form-success" hidden>
+            <p class="form-success-title" id="formSuccessLine">Backlog updated: your message is now P0.</p>
+            <p class="form-success-sub">Thanks for reaching out — I read every inbound personally and reply within 24 hours.</p>
+            <button type="button" class="btn btn-ghost" id="formResetBtn">Send another</button>
           </div>
-          <div class="form-row">
-            <div class="field">
-              <label for="f-email">Email</label>
-              <input id="f-email" type="email" name="email" required>
-            </div>
-            <div class="field">
-              <label for="f-subject">Subject</label>
-              <select id="f-subject" name="subject">
-                <option>Senior PM Role</option>
-                <option>AI Product Diagnostic</option>
-                <option>Embedded AI PM</option>
-                <option>Fractional AI Product Lead</option>
-                <option>Other</option>
-              </select>
-            </div>
-          </div>
-          <div class="field" style="margin-bottom:0.5rem;">
-            <label for="f-message">Context</label>
-            <textarea id="f-message" name="message" maxlength="600" required></textarea>
-            <div class="char-count"><span id="charCount">0</span> / 600</div>
-          </div>
-          <button type="submit" class="btn btn-primary form-submit">Send request ›</button>
-          <p class="form-note">Opens your email client — reply within 24 hours.</p>
-        </form>
+        </div>
       </div>
     </div>
   </section>
@@ -928,6 +1005,29 @@
     revealEls.forEach(el => el.classList.add('in'));
   }
 
+  // typewriter headings
+  const twHeadings = document.querySelectorAll('.tw-heading');
+  if ('IntersectionObserver' in window) {
+    const twIO = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const heading = entry.target;
+          heading.classList.add('tw-active');
+          const lines = heading.querySelectorAll('.tw-line');
+          lines.forEach(line => {
+            const delay = parseFloat(line.style.getPropertyValue('--delay')) || 0;
+            const dur = 1.1;
+            setTimeout(() => { line.classList.add('tw-done'); }, (delay + dur) * 1000 + 60);
+          });
+          twIO.unobserve(heading);
+        }
+      });
+    }, { threshold: 0.4 });
+    twHeadings.forEach(h => twIO.observe(h));
+  } else {
+    twHeadings.forEach(h => { h.classList.add('tw-active'); h.querySelectorAll('.tw-line').forEach(l => l.classList.add('tw-done')); });
+  }
+
   // slide counter
   const sections = Array.from(document.querySelectorAll('[data-section]'));
   const total = String(sections.length).padStart(2, '0');
@@ -953,18 +1053,84 @@
     msg.addEventListener('input', () => { count.textContent = msg.value.length; });
   }
 
-  // contact form -> mailto
-  const form = document.getElementById('contactForm');
-  if (form) {
-    form.addEventListener('submit', (e) => {
+  // contact form -> real submission (Formspree) with mailto fallback + thank-you state
+  //
+  // SETUP: this form is wired to send to tharun.invest@gmail.com via Formspree,
+  // a free form backend (no server code needed — works great on static Vercel sites).
+  // 1. Go to https://formspree.io, sign up free, create a form pointing to tharun.invest@gmail.com
+  // 2. Copy the endpoint it gives you (looks like https://formspree.io/f/xxxxxxxx)
+  // 3. Paste it below, replacing the placeholder string.
+  const FORM_ENDPOINT = "https://formspree.io/f/REPLACE_WITH_YOUR_FORMSPREE_ID";
+
+  const quirkyThankYouLines = [
+    "Backlog updated: your message is now P0.",
+    "Shipped to my inbox. No QA needed — replies are hand-tested.",
+    "Request received. Moving it straight past the icebox.",
+    "Logged, triaged, and prioritized above my own to-do list.",
+    "Message deployed successfully. Zero rollback required."
+  ];
+
+  const contactForm = document.getElementById('contactForm');
+  const contactFormWrap = document.getElementById('contactFormWrap');
+  const formSuccess = document.getElementById('formSuccess');
+  const formSuccessLine = document.getElementById('formSuccessLine');
+  const formSubmitBtn = document.getElementById('formSubmitBtn');
+  const formResetBtn = document.getElementById('formResetBtn');
+
+  function showThankYou() {
+    const line = quirkyThankYouLines[Math.floor(Math.random() * quirkyThankYouLines.length)];
+    formSuccessLine.textContent = line;
+    contactForm.hidden = true;
+    formSuccess.hidden = false;
+  }
+
+  if (contactForm) {
+    contactForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('f-name').value;
       const company = document.getElementById('f-company').value;
       const email = document.getElementById('f-email').value;
       const subject = document.getElementById('f-subject').value;
       const message = document.getElementById('f-message').value;
+
+      formSubmitBtn.disabled = true;
+      formSubmitBtn.textContent = 'Sending…';
+
+      const usingRealEndpoint = FORM_ENDPOINT.indexOf('REPLACE_WITH') === -1;
+
+      if (usingRealEndpoint) {
+        try {
+          const res = await fetch(FORM_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, company, email, subject, message })
+          });
+          if (res.ok) {
+            showThankYou();
+            contactForm.reset();
+            formSubmitBtn.disabled = false;
+            formSubmitBtn.textContent = 'Send request ›';
+            return;
+          }
+        } catch (err) {
+          // fall through to mailto fallback below
+        }
+      }
+
+      // Fallback: open the mail client pre-filled, then show the thank-you state.
       const body = `Name: ${name}\nCompany: ${company}\nEmail: ${email}\n\n${message}`;
       window.location.href = `mailto:tharun.invest@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      showThankYou();
+      contactForm.reset();
+      formSubmitBtn.disabled = false;
+      formSubmitBtn.textContent = 'Send request ›';
+    });
+  }
+
+  if (formResetBtn) {
+    formResetBtn.addEventListener('click', () => {
+      formSuccess.hidden = true;
+      contactForm.hidden = false;
     });
   }
 </script>
