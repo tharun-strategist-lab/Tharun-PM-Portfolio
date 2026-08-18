@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1034,8 +1033,10 @@
     });
   }
 
-  // background canvas: a single, persistent orbit + particle field that
-  // stays anchored to the viewport (not to any one section) and reacts to the cursor.
+  // background canvas: a slow-motion "atom" field — a glowing nucleus, two tilted
+  // orbits with electrons drifting around them, and a scattered constellation of
+  // tool/workflow glyphs that glow when an electron sweeps past. Cursor-responsive
+  // via layered parallax (glow moves most, orbits less, glyphs least = depth).
   (function initBgCanvas() {
     const canvas = document.getElementById('bgCanvas');
     if (!canvas) return;
@@ -1052,34 +1053,40 @@
     resize();
     window.addEventListener('resize', resize);
 
-    const symbols = ['01','{ }','λ','</>','AI','0','+','PM','1','X','#',']'];
-    const particles = [];
-    const count = Math.min(16, Math.floor((w * h) / 90000));
-    // cluster particles in a loose ellipse around the glow/ring anchor (upper hero area)
-    // instead of scattering uniformly across the whole viewport.
-    const clusterCx = w / 2, clusterCy = h * 0.24;
-    const clusterRx = Math.min(420, w * 0.34), clusterRy = 210;
-    for (let i = 0; i < count; i++) {
-      const ang = Math.random() * Math.PI * 2;
-      const rad = 0.35 + Math.random() * 0.65; // bias away from dead-center, still contained
-      particles.push({
-        baseX: clusterCx + Math.cos(ang) * clusterRx * rad,
-        baseY: clusterCy + Math.sin(ang) * clusterRy * rad,
-        x: 0, y: 0,
-        sym: symbols[i % symbols.length],
-        r: 10 + Math.random() * 6,
-        baseAlpha: 0.10 + Math.random() * 0.12,
-        twSpeed: 0.4 + Math.random() * 0.6,
-        twOffset: Math.random() * Math.PI * 2,
-        driftR: 8 + Math.random() * 14,
-        driftSpeed: 0.15 + Math.random() * 0.2,
-        driftOffset: Math.random() * Math.PI * 2
+    // Tool / workflow / hierarchy abbreviations — text glyphs, not brand marks
+    // (real product logos are trademarked, so this reads the same "constellation of
+    // tools" idea without reproducing anyone's mark).
+    const glyphLabels = [
+      'API','SDK','MVP','OKR','KPI','RICE','RACI','ROI','SaaS','UX',
+      'CI/CD','A/B','SSO','ETL','SLA','Agile','Scrum','Kanban','LLM','RAG',
+      'PRD','NPS','CRM','B2B'
+    ];
+    const glyphs = [];
+    const glyphCount = Math.min(14, glyphLabels.length);
+    // Compact cluster centered on the viewport, sized to sit *around* the hero
+    // copy rather than sprawl across it.
+    const fieldCx = w / 2, fieldCy = h * 0.5;
+    const fieldRx = Math.min(300, w * 0.22), fieldRy = 95;
+    for (let i = 0; i < glyphCount; i++) {
+      const ang = (i / glyphCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.28;
+      const rad = 0.34 + Math.random() * 0.56;
+      glyphs.push({
+        baseX: fieldCx + Math.cos(ang) * fieldRx * rad,
+        baseY: fieldCy + Math.sin(ang) * fieldRy * rad,
+        label: glyphLabels[i],
+        size: 11 + Math.random() * 3,
+        baseAlpha: 0.16 + Math.random() * 0.14,
+        bobR: 5 + Math.random() * 7,
+        bobSpeed: 0.12 + Math.random() * 0.22,
+        bobOffset: Math.random() * Math.PI * 2,
+        excite: 0 // transient glow boost when an electron sweeps near
       });
     }
 
-    let mouseX = -9999, mouseY = -9999, mouseActive = false;
-    window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; mouseActive = true; });
-    window.addEventListener('mouseleave', () => { mouseActive = false; });
+    // raw + smoothed (lagged) mouse position, used for layered parallax depth
+    let mouseX = w / 2, mouseY = h / 2;
+    let smX = mouseX, smY = mouseY;
+    window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
 
     let t = 0;
     let lastFrame = 0;
@@ -1087,68 +1094,103 @@
       requestAnimationFrame(draw);
       if (now - lastFrame < 33) return; // ~30fps cap for perf
       lastFrame = now;
-      t += reduceMotion ? 0 : 0.016;
+      t += reduceMotion ? 0 : 0.014; // slow-motion pace throughout
+      smX += (mouseX - smX) * 0.045;
+      smY += (mouseY - smY) * 0.045;
+      const parX = (smX - w / 2), parY = (smY - h / 2);
       ctx.clearRect(0, 0, w, h);
 
-      // Anchor point sits just above the headline (around the status pill),
-      // not centered on the headline itself — matches the reference composition.
-      const cx = w / 2, cy = h * 0.24;
-      const rx = Math.min(230, w * 0.19);
-      const ry = rx * 0.42;
-      const tilt = -0.26 + t * 0.006;      // near-static tilt, rotates almost imperceptibly
-      const tilt2 = 0.18 - t * 0.005;
+      // Anchor point sits at the vertical center of the viewport, and stays there
+      // (fixed fraction of h, independent of scroll/content) rather than tracking
+      // any particular section like the headline.
+      const cx = w / 2, cy = h * 0.5;
 
-      // glow: soft, drifts slowly on its own (independent idle motion, not cursor-locked)
-      const glowX = cx + Math.sin(t * 0.07) * 40;
-      const glowY = cy + Math.cos(t * 0.06) * 22;
-      const grad = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, 260);
-      grad.addColorStop(0, 'rgba(242,240,233,0.16)');
-      grad.addColorStop(0.4, 'rgba(242,240,233,0.05)');
+      // ---- nucleus: soft glow, slow independent drift + gentle breathing pulse ----
+      const glowPar = 0.045; // closest layer -> largest parallax
+      const glowX = cx + Math.sin(t * 0.06) * 34 + parX * glowPar;
+      const glowY = cy + Math.cos(t * 0.05) * 20 + parY * glowPar;
+      const pulse = 1 + Math.sin(t * 0.35) * 0.06;
+      const glowR = 165 * pulse;
+      const grad = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, glowR);
+      grad.addColorStop(0, `rgba(242,240,233,${0.15 * pulse})`);
+      grad.addColorStop(0.4, 'rgba(242,240,233,0.045)');
       grad.addColorStop(1, 'rgba(242,240,233,0)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
+      // tiny bright core
+      ctx.beginPath();
+      ctx.arc(glowX, glowY, 2.2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(242,240,233,0.55)';
+      ctx.fill();
 
-      // two faint overlapping orbit rings, tilted at different angles, rotating extremely slowly
-      function drawRing(scale, alpha, ringTilt) {
+      // ---- two tilted orbits, each rotating extremely slowly (own axis) ----
+      const orbitPar = 0.02; // mid layer
+      const ocx = cx + parX * orbitPar, ocy = cy + parY * orbitPar;
+      const orbits = [
+        { rx: Math.min(135, w * 0.11), ry: Math.min(135, w * 0.11) * 0.34, tilt: -0.24 + t * 0.0075, spin: 0.16 },
+        { rx: Math.min(105, w * 0.086), ry: Math.min(105, w * 0.086) * 0.4, tilt: 0.34 - t * 0.006, spin: -0.11 }
+      ];
+      orbits.forEach((orb) => {
         ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(ringTilt);
+        ctx.translate(ocx, ocy);
+        ctx.rotate(orb.tilt);
         ctx.beginPath();
-        ctx.ellipse(0, 0, rx * scale, ry * scale, 0, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(242,240,233,${alpha})`;
+        ctx.ellipse(0, 0, orb.rx, orb.ry, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(242,240,233,0.065)';
         ctx.lineWidth = 1;
         ctx.stroke();
         ctx.restore();
-      }
-      drawRing(1, 0.07, tilt);
-      drawRing(0.8, 0.05, tilt2);
+      });
 
-      // particles: twinkle + gentle drift + brighten & pull slightly toward cursor
-      ctx.font = '13px Inter, sans-serif';
+      // ---- electrons: one per orbit, drifting slow-mo with pseudo-3D depth ----
+      const electrons = orbits.map((orb) => {
+        const a = t * orb.spin;
+        const lx = Math.cos(a) * orb.rx;   // local pre-tilt position
+        const ly = Math.sin(a) * orb.ry;
+        const ex = ocx + lx * Math.cos(orb.tilt) - ly * Math.sin(orb.tilt);
+        const ey = ocy + lx * Math.sin(orb.tilt) + ly * Math.cos(orb.tilt);
+        const depth = (Math.sin(a) + 1) / 2; // 0 = far side, 1 = near side
+        return { x: ex, y: ey, depth };
+      });
+      electrons.forEach((e) => {
+        const r = 2 + e.depth * 1.8;
+        const a = 0.35 + e.depth * 0.55;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(242,240,233,${a.toFixed(3)})`;
+        ctx.shadowColor = 'rgba(242,240,233,0.8)';
+        ctx.shadowBlur = 6 + e.depth * 6;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      // ---- floating glyphs: independent bob + mild glow, brighten when an ----
+      // ---- electron sweeps close enough to "pass through" them             ----
+      const glyphPar = 0.01; // farthest layer -> smallest parallax
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      particles.forEach(p => {
-        const driftX = Math.cos(t * p.driftSpeed + p.driftOffset) * p.driftR;
-        const driftY = Math.sin(t * p.driftSpeed + p.driftOffset) * p.driftR;
-        let px = p.baseX + driftX;
-        let py = p.baseY + driftY;
+      glyphs.forEach((g) => {
+        const bx = g.baseX + parX * glyphPar;
+        const by = g.baseY + parY * glyphPar;
+        const px = bx + Math.cos(t * g.bobSpeed + g.bobOffset) * g.bobR * 0.6;
+        const py = by + Math.sin(t * g.bobSpeed + g.bobOffset) * g.bobR;
 
-        let alpha = p.baseAlpha * (0.5 + 0.5 * Math.sin(t * p.twSpeed + p.twOffset));
+        // proximity to either electron boosts a decaying "excite" value
+        let near = 0;
+        electrons.forEach((e) => {
+          const dist = Math.hypot(e.x - px, e.y - py);
+          const threshold = 46;
+          if (dist < threshold) near = Math.max(near, 1 - dist / threshold);
+        });
+        g.excite = Math.max(g.excite * 0.92, near);
 
-        if (mouseActive) {
-          const dx = mouseX - px, dy = mouseY - py;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const radius = 180;
-          if (dist < radius) {
-            const influence = 1 - dist / radius;
-            alpha = Math.min(0.9, alpha + influence * 0.7);
-            px += dx * influence * 0.12;
-            py += dy * influence * 0.12;
-          }
-        }
-
+        const alpha = Math.min(0.85, g.baseAlpha + g.excite * 0.6);
+        ctx.font = `${g.size}px ui-monospace, Menlo, monospace`;
+        ctx.shadowColor = 'rgba(242,240,233,0.9)';
+        ctx.shadowBlur = 2 + g.excite * 14;
         ctx.fillStyle = `rgba(242,240,233,${alpha.toFixed(3)})`;
-        ctx.fillText(p.sym, px, py);
+        ctx.fillText(g.label, px, py);
+        ctx.shadowBlur = 0;
       });
     }
     requestAnimationFrame(draw);
