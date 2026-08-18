@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tharun Prakash — AI Product Manager</title>
-<meta name="description" content="Tharun Prakash — Product Manager transitioning into AI-native product leadership. Open to senior PM / AI PM roles. Bengaluru & remote.">
+<meta name="description" content="Tharun Prakash — Product Manager, AI-native product leadership. Open to senior PM / AI PM roles. Bengaluru & remote.">
 <meta name="theme-color" content="#000000">
 <meta name="color-scheme" content="dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23000000'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='26' fill='%23f2f0e9' text-anchor='middle'%3ETP%3C/text%3E%3C/svg%3E">
@@ -50,15 +51,7 @@
   .section-head h2 em{ font-style:italic; font-weight:400; }
   .section-head p{ color:var(--text-muted); margin-top:1.2rem; font-size:1.02rem; max-width:640px; margin-left:auto; margin-right:auto; }
 
-  /* ---- universal background: grid + canvas orbit field ---- */
-  body::before{
-    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
-    background-image:
-      linear-gradient(rgba(242,240,233,0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(242,240,233,0.035) 1px, transparent 1px);
-    background-size:64px 64px;
-    mask-image:radial-gradient(ellipse 90% 70% at 50% 30%, #000 40%, transparent 90%);
-  }
+  /* ---- universal background: canvas orbit field ---- */
   #bgCanvas{
     position:fixed; inset:0; width:100vw; height:100vh; z-index:0; pointer-events:none;
   }
@@ -348,7 +341,7 @@
     <div class="wrap hero-inner">
       <span class="pill"><span class="dot"></span>Open to senior PM roles</span>
       <h1 class="tw-heading" id="twHero"><span class="tw-line" style="--chars:17;--delay:0s">Ship AI products</span><br><span class="tw-line italic-line" style="--chars:21;--delay:1.3s">that earn real trust.</span></h1>
-      <p class="sub">Transitioning into product management full-time — AI product strategy, multi-agent architecture, and safety frameworks, backed by 8+ years turning ambiguous growth and brand problems into shipped, measurable outcomes.</p>
+      <p class="sub">Product Manager with 8+ years leading product, growth, and brand strategy — now focused on AI-native products: multi-agent architecture, model evaluation, and safety frameworks for high-stakes decisions.</p>
       <div class="hero-cta">
         <a href="#contact" class="btn btn-primary">Get in touch</a>
         <a href="#method" class="btn btn-ghost">See how I work</a>
@@ -805,7 +798,7 @@
         </details>
         <details class="faq-item reveal">
           <summary>Are you a marketer or a product manager?</summary>
-          <p>Both, in sequence. 8+ years leading product, growth, and brand work built the instincts; I'm now formally transitioning into product management full-time, with an AI-first specialization, and actively looking to land a senior PM / AI PM role — alongside the advisory work above.</p>
+          <p>Both, at once. 8+ years leading product, growth, and brand work, with an AI-first specialization built through hands-on work like Ad Platoon — and I'm actively looking to land a senior PM / AI PM role, alongside the advisory work above.</p>
         </details>
       </div>
     </div>
@@ -884,7 +877,7 @@
     <div class="footer-grid">
       <div class="footer-col">
         <span class="logo-mark" style="margin-bottom:0.8rem;">TP</span>
-        <span style="max-width:240px;">Transitioning into product management, AI-first. Open to senior PM roles — Bengaluru &amp; remote.</span>
+        <span style="max-width:240px;">Product Manager, AI-first. 8+ years in product, growth &amp; brand — open to senior PM roles, Bengaluru &amp; remote.</span>
       </div>
       <div class="footer-col">
         <h4>Navigate</h4>
@@ -1084,15 +1077,15 @@
       ctx.clearRect(0, 0, w, h);
 
       const cx = w / 2, cy = h * 0.32;
-      const rx = Math.min(440, w * 0.42);
+      const rx = Math.min(300, w * 0.26);
       const ry = rx * 0.5;
-      const tilt = Math.sin(t * 0.11) * 0.11 - 0.02;
-      const squash = 0.62 + Math.sin(t * 0.09) * 0.18;
+      const tilt = t * 0.025;
+      const squash = 0.72 + Math.sin(t * 0.05) * 0.08;
 
       // glow, drifting slowly
       const glowX = cx + Math.sin(t * 0.07) * 60;
       const glowY = cy + Math.cos(t * 0.06) * 40;
-      const grad = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, 260);
+      const grad = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, 200);
       grad.addColorStop(0, 'rgba(242,240,233,0.10)');
       grad.addColorStop(0.4, 'rgba(242,240,233,0.035)');
       grad.addColorStop(1, 'rgba(242,240,233,0)');
@@ -1116,7 +1109,7 @@
       drawRing(0.78, 0.06);
 
       // orbiting dot along the ring
-      const orbitAngle = t * 0.25;
+      const orbitAngle = t * 0.15;
       const ox = cx + Math.cos(orbitAngle) * rx * Math.cos(tilt) - Math.sin(orbitAngle) * ry * squash * Math.sin(tilt);
       const oy = cy + Math.cos(orbitAngle) * rx * Math.sin(tilt) + Math.sin(orbitAngle) * ry * squash * Math.cos(tilt);
       ctx.beginPath();
