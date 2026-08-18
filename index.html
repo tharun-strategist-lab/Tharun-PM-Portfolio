@@ -1115,8 +1115,8 @@
       const pulse = 1 + Math.sin(t * 0.35) * 0.08;
       const glowR = 220 * pulse;
       const grad = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, glowR);
-      grad.addColorStop(0, `rgba(255,253,248,${0.34 * pulse})`);
-      grad.addColorStop(0.28, `rgba(242,240,233,${0.16 * pulse})`);
+      grad.addColorStop(0, `rgba(255,253,248,${0.20 * pulse})`);
+      grad.addColorStop(0.28, `rgba(242,240,233,${0.10 * pulse})`);
       grad.addColorStop(0.6, 'rgba(242,240,233,0.05)');
       grad.addColorStop(1, 'rgba(242,240,233,0)');
       ctx.fillStyle = grad;
