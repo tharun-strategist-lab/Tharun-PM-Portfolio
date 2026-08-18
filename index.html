@@ -30,8 +30,16 @@
   *{ box-sizing:border-box; margin:0; padding:0; }
   html{ scroll-behavior:smooth; }
   body{
-    background:var(--bg); color:var(--text); font-family:var(--font-body);
+    background:
+      radial-gradient(ellipse 900px 700px at 50% 26%, #1c1c1c 0%, #101010 38%, #000000 72%);
+    color:var(--text); font-family:var(--font-body);
     line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  /* film-grain overlay: fixed, ultra-low opacity, sits above the vignette but below content */
+  body::before{
+    content:''; position:fixed; inset:-100px; z-index:0; pointer-events:none;
+    opacity:0.05; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
   img{ max-width:100%; display:block; }
   a{ color:inherit; text-decoration:none; }
@@ -1046,15 +1054,21 @@
 
     const symbols = ['01','{ }','λ','</>','AI','0','+','PM','1','X','#',']'];
     const particles = [];
-    const count = Math.min(26, Math.floor((w * h) / 55000));
+    const count = Math.min(16, Math.floor((w * h) / 90000));
+    // cluster particles in a loose ellipse around the glow/ring anchor (upper hero area)
+    // instead of scattering uniformly across the whole viewport.
+    const clusterCx = w / 2, clusterCy = h * 0.24;
+    const clusterRx = Math.min(420, w * 0.34), clusterRy = 210;
     for (let i = 0; i < count; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const rad = 0.35 + Math.random() * 0.65; // bias away from dead-center, still contained
       particles.push({
-        baseX: Math.random() * w,
-        baseY: Math.random() * h,
+        baseX: clusterCx + Math.cos(ang) * clusterRx * rad,
+        baseY: clusterCy + Math.sin(ang) * clusterRy * rad,
         x: 0, y: 0,
         sym: symbols[i % symbols.length],
         r: 10 + Math.random() * 6,
-        baseAlpha: 0.12 + Math.random() * 0.14,
+        baseAlpha: 0.10 + Math.random() * 0.12,
         twSpeed: 0.4 + Math.random() * 0.6,
         twOffset: Math.random() * Math.PI * 2,
         driftR: 8 + Math.random() * 14,
@@ -1076,46 +1090,38 @@
       t += reduceMotion ? 0 : 0.016;
       ctx.clearRect(0, 0, w, h);
 
-      const cx = w / 2, cy = h * 0.32;
-      const rx = Math.min(300, w * 0.26);
-      const ry = rx * 0.5;
-      const tilt = t * 0.025;
-      const squash = 0.72 + Math.sin(t * 0.05) * 0.08;
+      // Anchor point sits just above the headline (around the status pill),
+      // not centered on the headline itself — matches the reference composition.
+      const cx = w / 2, cy = h * 0.24;
+      const rx = Math.min(230, w * 0.19);
+      const ry = rx * 0.42;
+      const tilt = -0.26 + t * 0.006;      // near-static tilt, rotates almost imperceptibly
+      const tilt2 = 0.18 - t * 0.005;
 
-      // glow, drifting slowly
-      const glowX = cx + Math.sin(t * 0.07) * 60;
-      const glowY = cy + Math.cos(t * 0.06) * 40;
-      const grad = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, 200);
-      grad.addColorStop(0, 'rgba(242,240,233,0.10)');
-      grad.addColorStop(0.4, 'rgba(242,240,233,0.035)');
+      // glow: soft, drifts slowly on its own (independent idle motion, not cursor-locked)
+      const glowX = cx + Math.sin(t * 0.07) * 40;
+      const glowY = cy + Math.cos(t * 0.06) * 22;
+      const grad = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, 260);
+      grad.addColorStop(0, 'rgba(242,240,233,0.16)');
+      grad.addColorStop(0.4, 'rgba(242,240,233,0.05)');
       grad.addColorStop(1, 'rgba(242,240,233,0)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
 
-      // rings
-      function drawRing(scale, alpha) {
+      // two faint overlapping orbit rings, tilted at different angles, rotating extremely slowly
+      function drawRing(scale, alpha, ringTilt) {
         ctx.save();
         ctx.translate(cx, cy);
-        ctx.rotate(tilt);
-        ctx.scale(1, squash);
+        ctx.rotate(ringTilt);
         ctx.beginPath();
-        ctx.ellipse(0, 0, rx * scale, ry * scale / squash, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, rx * scale, ry * scale, 0, 0, Math.PI * 2);
         ctx.strokeStyle = `rgba(242,240,233,${alpha})`;
         ctx.lineWidth = 1;
         ctx.stroke();
         ctx.restore();
       }
-      drawRing(1, 0.1);
-      drawRing(0.78, 0.06);
-
-      // orbiting dot along the ring
-      const orbitAngle = t * 0.15;
-      const ox = cx + Math.cos(orbitAngle) * rx * Math.cos(tilt) - Math.sin(orbitAngle) * ry * squash * Math.sin(tilt);
-      const oy = cy + Math.cos(orbitAngle) * rx * Math.sin(tilt) + Math.sin(orbitAngle) * ry * squash * Math.cos(tilt);
-      ctx.beginPath();
-      ctx.arc(ox, oy, 3, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(242,240,233,0.85)';
-      ctx.fill();
+      drawRing(1, 0.07, tilt);
+      drawRing(0.8, 0.05, tilt2);
 
       // particles: twinkle + gentle drift + brighten & pull slightly toward cursor
       ctx.font = '13px Inter, sans-serif';
