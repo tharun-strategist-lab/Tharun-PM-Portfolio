@@ -1452,57 +1452,103 @@
     canvas.style.height = h + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const colors = ['#f2f0e9', '#7c6ef2', '#f2c94c', '#6fcf97', '#f28fad', '#56ccf2'];
+    // Same monochrome/warm-white theme as the rest of the site, just a few
+    // brightness variants so the burst still reads as sparkle, not confetti.
+    const colors = ['#f2f0e9', '#e7ddc4', '#c9c0a0', '#fffdf8', '#98968f'];
     const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) return;
 
+    // Primary spark: thin streak that arcs outward, then falls with gravity
+    // trailing a faint line behind it (a "willow" firework, not a confetti pop).
     function burst(cx, cy) {
-      const count = 26;
-      const particles = [];
+      const count = 22;
+      const sparks = [];
       for (let i = 0; i < count; i++) {
-        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
-        const speed = 1.6 + Math.random() * 2.4;
-        particles.push({
-          x: cx, y: cy,
+        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.25;
+        const speed = 1.3 + Math.random() * 2.1;
+        sparks.push({
+          x: cx, y: cy, px: cx, py: cy,
           vx: Math.cos(angle) * speed,
           vy: Math.sin(angle) * speed,
           color: colors[Math.floor(Math.random() * colors.length)],
-          size: 2 + Math.random() * 2.2,
-          life: 1
+          width: 0.6 + Math.random() * 0.7,
+          life: 1,
+          decay: 0.0045 + Math.random() * 0.0035,
+          sparkleAt: 0.55 + Math.random() * 0.3,
+          sparkled: false,
+          dust: []
         });
       }
-      return particles;
+      return sparks;
     }
 
-    // Three staggered bursts across the box for a fuller "cute fireworks" feel.
-    let allParticles = [];
+    let allSparks = [];
     const burstPoints = [
-      { x: w * 0.28, y: h * 0.38, delay: 0 },
-      { x: w * 0.72, y: h * 0.3, delay: 160 },
-      { x: w * 0.5, y: h * 0.55, delay: 320 }
+      { x: w * 0.28, y: h * 0.36, delay: 0 },
+      { x: w * 0.72, y: h * 0.28, delay: 170 },
+      { x: w * 0.5, y: h * 0.5, delay: 340 }
     ];
     burstPoints.forEach((bp) => {
-      setTimeout(() => { allParticles = allParticles.concat(burst(bp.x, bp.y)); }, bp.delay);
+      setTimeout(() => { allSparks = allSparks.concat(burst(bp.x, bp.y)); }, bp.delay);
     });
 
     const start = performance.now();
-    const duration = 1700;
+    const duration = 3200;
+    let lastTime = start;
     function frame(now) {
       const elapsed = now - start;
+      const dt = Math.min(4, (now - lastTime) / (1000 / 60)); // normalized to 60fps units, capped for tab-switch stalls
+      lastTime = now;
       ctx.clearRect(0, 0, w, h);
-      allParticles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.045; // gentle gravity
-        p.vx *= 0.985;
-        p.life -= 0.014;
+
+      allSparks.forEach((p) => {
+        p.px = p.x; p.py = p.y;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 0.032 * dt;      // gravity pulls the streak into a fall
+        p.vx *= Math.pow(0.986, dt); // outward speed bleeds off into the drop
+        p.life -= p.decay * dt;
         if (p.life <= 0) return;
-        ctx.globalAlpha = Math.max(0, p.life);
-        ctx.fillStyle = p.color;
+
+        // thin trailing streak, not a filled dot
+        ctx.globalAlpha = Math.max(0, p.life) * 0.9;
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = p.width;
+        ctx.lineCap = 'round';
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(p.px, p.py);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+
+        // leaves a little sparkle dust drifting behind as it falls
+        if (Math.random() < 0.5 * dt) {
+          p.dust.push({ x: p.x, y: p.y, life: 1 });
+        }
+
+        // one bright glint partway through each spark's life
+        if (!p.sparkled && p.life < p.sparkleAt) {
+          p.sparkled = true;
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = '#fffdf8';
+          ctx.shadowColor = '#fffdf8';
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 1.4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+
+        p.dust = p.dust.filter((d) => d.life > 0);
+        p.dust.forEach((d) => {
+          d.life -= 0.025 * dt;
+          ctx.globalAlpha = Math.max(0, d.life) * 0.6;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, 0.6, 0, Math.PI * 2);
+          ctx.fill();
+        });
       });
+
       ctx.globalAlpha = 1;
       if (elapsed < duration) {
         requestAnimationFrame(frame);
